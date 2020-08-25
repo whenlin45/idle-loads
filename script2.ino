@@ -26,6 +26,18 @@ unsigned long timeElapsed = 0; // Track time in milliseconds since last reading
 void setup() {
   Serial.begin( 9600 );    // Start the serial port
   pinMode(ACS_Pin,INPUT);  //Define the pin mode
+  calibrate() //the intercept and slope are determined here, currently only the intercept is determined
+}
+
+void calibrate(){
+  RunningStatistics inputStats;                 // create statistics to look at the raw test signal
+  inputStats.setWindowSecs( windowLength );     //Set the window length
+
+  if(inputStats.sigma() > 0){   //if sigma > 0, intercept is negative to reduce offset to 0
+    intercept = -1 * inputStats.sigma()
+  } else if (inputStats.sigma() < 0) {  //if sigma < 0, intercept is positive to reduce offset to 0
+    intercept = inputStats.sigma()
+  }
 }
 
 void loop() {
@@ -46,6 +58,8 @@ void loop() {
 
     }
   }
+  
+  delay(700); //700ms
 }
 
 /* About the slope and intercept
