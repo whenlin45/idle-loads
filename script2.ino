@@ -40,6 +40,15 @@ void calibrate(){
   }
 }
 
+bool didCurrentChange(float prevVal, float currentVal){
+    return abs((prevVal - currentVal)) != 0;
+}
+
+void saveEnergy(){
+    //put arduino to sleep, preferably not delay.
+    //Sleep saves energy versus using the delay function
+}
+
 void loop() {
   RunningStatistics inputStats;                 // create statistics to look at the raw test signal
   inputStats.setWindowSecs( windowLength );     //Set the window length
