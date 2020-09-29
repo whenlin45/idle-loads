@@ -20,7 +20,8 @@
 
 float oldCurrent;
 float newCurrent;
-#define ACS_Pin A0                        //Sensor data pin on A0 analog input
+#define ACS_Pin1 A1                        //Sensor data pin on A1 analog input
+#define ACS_Pin2 A2                        //Sensor data pin on A2 analog input
 
 float ACS_Value;                              //Here we keep the raw data valuess
 float testFrequency = 50;                    // test signal frequency (Hz)
@@ -39,10 +40,32 @@ void setup() {
   // put your setup code here, to run once:
   Serial.begin(9600); //Start serial communication
 
-  pinMode(10, OUTPUT); // pin 10 as output
-  pinMode(ACS_Pin,INPUT);  //Define the pin mode
+  pinMode(2, INPUT); // pin 2 as INPUT
+  pinMode(ACS_Pin1,INPUT);  //Define the pin mode
+  pinMode(ACS_Pin2,INPUT);  //Define the pin mode
   calibrate();
   readCurrent();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+
+   // Allow wake up pin to trigger interrupt on rising .
+    attachInterrupt(digitalPinToInterrupt(2), wakeUp, RISING);
+
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    // Disable external pin interrupt on wake up pin.
+
+    detachInterrupt(digitalPinToInterrupt(2));
+    
+  readCurrent();
+
+  if(didCurrentChange(oldCurrent, newCurrent)){
+    Serial.print("current changed...");
+  } else {
+    Serial.print("current has not changed...");
+  }
+  
 }
 
 void calibrate(){
@@ -56,45 +79,6 @@ void calibrate(){
   }
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
-  readCurrent();
-
-  //This if block could probably be in the ISR for the interrupt
-  if(didCurrentChange(oldCurrent, newCurrent)){
-    
-  } else {
-
-  }
-  
-  digitalWrite(10, LOW);
-
-//  raw= analogRead(analogPin);
-//  if(raw) 
-//  { 
-//  buffer= raw * Vin;
-//  Vout= (buffer)/1024.0;
-//  buffer= (Vin/Vout) -1;
-//  R2= R1 * buffer;
-//  Serial.print("Vout: ");
-//  Serial.println(Vout);
-//  Serial.print("R2: ");
-//  Serial.println(R2);
-//
-//  if(R2 < 60000){
-//    digitalWrite(7, LOW);
-//    Serial.print("Setting current to low");
-//  } else {
-//    digitalWrite(7, HIGH);
-//    Serial.print("Setting current to high");
-//  }
-//  
-//  delay(1000);
-//
-  //}
-}
-
 /**
  *  This method will update the current Amps value and the old Amps value each time it is invoked
  */
@@ -104,9 +88,7 @@ void readCurrent() {
   newCurrent = Amps_TRMS;
   //return newCurrent;
 }
-/**
- *  
- */
+
 bool didCurrentChange(float prevVal, float currentVal){
   return abs((prevVal - currentVal)) != 0;
 }
