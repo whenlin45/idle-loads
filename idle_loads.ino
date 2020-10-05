@@ -18,8 +18,11 @@
 //float R2= 0;
 //float buffer= 0;
 
-float oldCurrent;
-float newCurrent;
+float oldCurrent1; 
+float newCurrent1;
+float oldCurrent2;
+float newCurrent2;
+
 #define ACS_Pin1 A1                        //Sensor data pin on A1 analog input
 #define ACS_Pin2 A2                        //Sensor data pin on A2 analog input
 
@@ -28,10 +31,13 @@ float testFrequency = 50;                    // test signal frequency (Hz)
 float windowLength = 40.0/testFrequency;     // how long to average the signal, for statistist
 
 float intercept = 0; // to be adjusted based on calibration testing
+float intercept1 = 0;
 float slope = 0.0752; // to be adjusted based on calibration testing
+float slope1 = 0.0752;
                       //Please check the ACS712 Tutorial video by SurtrTech to see how to get them because it depends on your sensor, or look below
 
-float Amps_TRMS; // estimated actual current in amps
+float Amps_TRMS1; // estimated actual current in amps
+float Amps_TRMS2;
 
 float outputCurrent;
 float inputResistance;
@@ -60,7 +66,7 @@ void loop() {
     
   readCurrent();
 
-  if(didCurrentChange(oldCurrent, newCurrent)){
+  if(didCurrentChange(oldCurrent2, newCurrent2)){
     Serial.print("current changed...");
   } else {
     Serial.print("current has not changed...");
@@ -68,10 +74,25 @@ void loop() {
   
 }
 
+void wakeUp() {
+  Serial.print("INTERRUPT TRIGGERED!!!!");
+}
+
 void calibrate(){
   RunningStatistics inputStats;                 // create statistics to look at the raw test signal
-  inputStats.setWindowSecs( windowLength );     //Set the window length
+  RunningStatistics inputStats1;
 
+  inputStats.setWindowSecs( windowLength );     //Set the window length
+  inputStats1.setWindowSecs (windowLength);
+
+  //INPUT STATS FOR 2ND SENSOR
+  if(inputStats1.sigma() > 0){   //if sigma > 0, intercept is negative to reduce offset to 0
+    intercept1 = -1 * inputStats1.sigma()
+  } else if (inputStats1.sigma() < 0) {  //if sigma < 0, intercept is positive to reduce offset to 0
+    intercept1 = inputStats1.sigma()
+  }
+
+//INPUT STATS FOR 1st SENSOR
   if(inputStats.sigma() > 0){   //if sigma > 0, intercept is negative to reduce offset to 0
     intercept = -1 * inputStats.sigma()
   } else if (inputStats.sigma() < 0) {  //if sigma < 0, intercept is positive to reduce offset to 0
@@ -83,9 +104,13 @@ void calibrate(){
  *  This method will update the current Amps value and the old Amps value each time it is invoked
  */
 void readCurrent() {
-  Amps_TRMS = slope * inputStats.sigma();
-  oldCurrent = newCurrent;
-  newCurrent = Amps_TRMS;
+  Amps_TRMS1 = slope * inputStats.sigma();
+  oldCurrent1 = newCurrent1;
+  newCurrent1 = Amps_TRMS1;
+
+  Amps_TRMS2 = slope1 * inputStats1.sigma();
+  oldCurrent2 = newCurrent2;
+  newCurrent2 = Amps_TRMS2;
   //return newCurrent;
 }
 
